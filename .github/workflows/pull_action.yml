@@ -5,7 +5,11 @@ on:
       docker_images:
         description: '请填写docker镜像名称 多个用英文逗号分开'
         required: true
-        default: 'ros:jazzy'  # 设置默认的 Docker 镜像列表
+        default: 'arm64v8/ros:jazzy'
+      platform:
+        description: '镜像平台 (linux/arm64=ARM, linux/amd64=x86)，留空则自动'
+        required: false
+        default: ''
 
 jobs:
   pull_and_package:
@@ -23,9 +27,16 @@ jobs:
     - name: Pull Docker Images and Package
       run: |
         images="${{ github.event.inputs.docker_images }}"
+        platform="${{ github.event.inputs.platform }}"
         IFS=',' read -r -a image_array <<< "$images"
         for image in "${image_array[@]}"; do
-          docker pull "${image}"
+          # 显式指定平台拉取，避免 runner(amd64) 拉取 arm64 镜像时报
+          # "no matching manifest for linux/amd64"
+          if [ -n "$platform" ]; then
+            docker pull --platform "${platform}" "${image}"
+          else
+            docker pull "${image}" || docker pull --platform linux/arm64 "${image}"
+          fi
           docker save "${image}" -o "${image//\//_}-images.tar"
         done
 

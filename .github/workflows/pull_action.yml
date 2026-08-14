@@ -6,10 +6,6 @@ on:
         description: '请填写docker镜像名称 多个用英文逗号分开'
         required: true
         default: 'ros:jazzy'  # 设置默认的 Docker 镜像列表
-      platform:
-        description: '请填写docker镜像平台, linux/amd64 or linux/arm64 or else'
-        required: true
-        default: 'linux/amd64'  # 设置默认的 Docker 镜像列表
 
 jobs:
   pull_and_package:
@@ -29,7 +25,7 @@ jobs:
         images="${{ github.event.inputs.docker_images }}"
         IFS=',' read -r -a image_array <<< "$images"
         for image in "${image_array[@]}"; do
-          docker pull "${image}" --platform "${{ github.event.inputs.platform }}"
+          docker pull "${image}"
           docker save "${image}" -o "${image//\//_}-images.tar"
         done
 
